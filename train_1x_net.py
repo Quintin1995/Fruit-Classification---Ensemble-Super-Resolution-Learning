@@ -44,9 +44,11 @@ def load_data(data_path, test_fraction):
     carambola_onlyfiles = [f for f in listdir(join(data_path, 'Carambola')) if isfile(join(data_path, 'Carambola', f))]
 
     # create data arrays shuffled
-    bananen    = np.asarray([np.array(Image.open(join(data_path, 'Banana', banaan))) for banaan in bananen_onlyfiles])
+    # bananen    = np.asarray([np.array(Image.open(join(data_path, 'Banana', banaan))) for banaan in bananen_onlyfiles])
+    bananen    = np.asarray([np.array(cv2.cvtColor(cv2.imread(join(data_path, 'Banana', banaan)), cv2.COLOR_BGR2GRAY)) for banaan in bananen_onlyfiles])
     np.random.shuffle(bananen)
-    carambolas = np.asarray([np.array(Image.open(join(data_path, 'Carambola', carambola))) for carambola in carambola_onlyfiles])
+    carambolas = np.asarray([np.array(cv2.cvtColor(cv2.imread(join(data_path, 'Carambola', carambola)), cv2.COLOR_BGR2GRAY)) for carambola in carambola_onlyfiles])
+    # carambolas = np.asarray([np.array(Image.open(join(data_path, 'Carambola', carambola))) for carambola in carambola_onlyfiles])
     np.random.shuffle(carambolas)
 
     #x train
@@ -61,9 +63,13 @@ def load_data(data_path, test_fraction):
     x_train = np.concatenate([bananen_x_train, carambolas_x_train])/255.0
     x_test  = np.concatenate([bananen_x_test , carambolas_x_test])/255.0
 
-    #combine the label vectors
+    #add empty color channel, is needed for neural net
+    x_train = np.expand_dims(x_train, axis=3)
+    x_test  = np.expand_dims(x_test, axis=3)
+
+    #combine the label vectors - y
     y_train = np.concatenate((np.zeros(bananen_x_train.shape[0]), np.ones(carambolas_x_train.shape[0])))
-    y_test = np.concatenate((np.zeros(bananen_x_test.shape[0]),   np.ones(carambolas_x_test.shape[0])))
+    y_test  = np.concatenate((np.zeros(bananen_x_test.shape[0]),   np.ones(carambolas_x_test.shape[0])))
 
     if VERBOSE:
         print("bananen.shape: " + str(bananen.shape))
@@ -115,7 +121,7 @@ def create_model():
 
 # OTHER variables
 data_path = r'data/1x/'
-IMG_DIMS = (64,80,3)
+IMG_DIMS = (64,80,1)        #gray scale
 VERBOSE = True
 NET_VERBOSE = True
 model_path = "models_trained/model_1x.h5"
@@ -147,6 +153,7 @@ print("example image = " + str(x_train[4]))
 print("\n---------------------------------------------\n")
 
 model = create_model()
+
 
 history = model.fit(x_train, y_train,
                    epochs=EPOCHS,
